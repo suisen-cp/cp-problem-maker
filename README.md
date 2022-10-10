@@ -2,6 +2,27 @@
 
 競技プログラミングの問題作成を補助するツール。
 
+## インストール
+
+```bash
+cd インストールしたい場所
+git clone git@github.com:suisen-cp/cp-problem-maker.git
+cd cp-problem-maker
+pip install .
+```
+
+## アンインストール
+
+```bash
+pip uninstall /path/to/repository
+```
+
+入れた場所を忘れた場合は以下のコマンドを打って `Location` の部分を見ればよい。
+
+```bash
+pip show cp-problem-maker
+```
+
 ## 使い方
 
 ### `cp-problem-maker init`
