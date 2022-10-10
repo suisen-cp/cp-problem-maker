@@ -1,3 +1,0 @@
-[console_scripts]
-cp-problem-maker = cp_problem_maker.main:main
-
