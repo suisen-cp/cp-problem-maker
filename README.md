@@ -121,8 +121,6 @@ cp-problem-maker gen-case [-p /path/to/problem] [--allow-replace]
 
 同じ引数で `cp-problem-maker gen-params` を実行して設定ファイルの変更を反映してから入出力を生成する。`problem/in/` および `problem/out/` が空ではないか、あるいは `problem/include/params.hpp` が既に存在していればエラーとなる。ただし、明示的に `--allow-replace` を指定した場合はこの限りではない。
 
-`cp-problem-maker gen-params`
-
 ### `cp-problem-maker check`
 
 ```bash
@@ -145,6 +143,8 @@ cp-problem-maker check [-p /path/to/problem]
 ```
 
 ## 設定ファイルの書き方
+
+https://github.com/yosupo06/library-checker-problems と大体同じ。
 
 ```toml
 title = "title" # 問題のタイトル
