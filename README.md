@@ -1,12 +1,12 @@
 # cp-problem-maker
 
-競技プログラミングの問題作成を補助するツール。
+競技プログラミングの問題作成を補助するツール。仕様は https://github.com/yosupo06/library-checker-problems をかなり参考にしている。
 
 ## 動作環境
 
 - :o: Windows (WSL)
 - :x: Windows (非WSL)
-- :o: Linux
+- :o: Linux (多分)
 - :question: Mac
 
 ## インストール
