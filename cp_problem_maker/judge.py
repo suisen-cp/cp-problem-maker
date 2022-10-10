@@ -44,12 +44,6 @@ class JudgeResult:
     elapsed_ms: int
 
 
-def _exec_solution_cmd(solution_file: Path) -> List[str]:
-    return [
-        f'{solution_file.with_suffix("")}'
-    ]
-
-
 def _check_cmd(*, checker_file: Path, input_file: Path, output_file_expected: Path, output_file_actual: Path) -> List[str]:
     checker_exe_file = checker_file.with_suffix('')
     return [
@@ -57,6 +51,37 @@ def _check_cmd(*, checker_file: Path, input_file: Path, output_file_expected: Pa
         f'{input_file}',
         f'{output_file_expected}',
         f'{output_file_actual}',
+    ]
+
+
+def _check(
+    *,
+    input_file: Path,
+    output_file: Path,
+    checker_file: Path,
+    output_file_expected: Path
+) -> JudgeStatus:
+    logger.info("running checker...")
+    pathlib_util.ensure_file(checker_file)
+    pathlib_util.ensure_file(output_file_expected)
+    try:
+        check_call(
+            _check_cmd(
+                checker_file=checker_file,
+                input_file=input_file,
+                output_file_expected=output_file_expected,
+                output_file_actual=output_file
+            ),
+            stderr=DEVNULL
+        )
+        return JudgeStatus.AC
+    except CalledProcessError:
+        return JudgeStatus.WA
+
+
+def _exec_solution_cmd(solution_file: Path) -> List[str]:
+    return [
+        f'{solution_file.with_suffix("")}'
     ]
 
 
@@ -107,21 +132,12 @@ def judge(
     elapsed_ms = (perf_counter_ns() - start_time) // (10 ** 6)
 
     if status == JudgeStatus.AC and checker_file is not None and output_file_expected is not None:
-        logger.info("running checker...")
-        pathlib_util.ensure_file(checker_file)
-        pathlib_util.ensure_file(output_file_expected)
-        try:
-            check_call(
-                _check_cmd(
-                    checker_file=checker_file,
-                    input_file=input_file,
-                    output_file_expected=output_file_expected,
-                    output_file_actual=output_file
-                ),
-                stderr=DEVNULL
-            )
-        except CalledProcessError:
-            status = JudgeStatus.WA
+        status = _check(
+            input_file=input_file,
+            output_file=output_file,
+            checker_file=checker_file,
+            output_file_expected=output_file_expected
+        )
 
     return JudgeResult(status=status, elapsed_ms=elapsed_ms)
 

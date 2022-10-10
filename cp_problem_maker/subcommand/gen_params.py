@@ -1,7 +1,6 @@
 import argparse
 from logging import Logger, getLogger
 from pathlib import Path
-from typing import Set
 
 from cp_problem_maker.problem import Problem
 from cp_problem_maker.config import Config
