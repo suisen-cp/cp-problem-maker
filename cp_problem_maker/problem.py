@@ -43,4 +43,3 @@ class Problem:
         self.verifier_file.touch(exist_ok=True)
         self.config_file.touch(exist_ok=True)
         self.task_file.touch(exist_ok=True)
-        self.params_file.touch(exist_ok=True)

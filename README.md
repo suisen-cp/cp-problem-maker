@@ -43,8 +43,7 @@ problem
  |   |- example_00.in  # サンプルケースなど、手動で作成する入力
  |   |- random.cpp     # 入力生成器
  |- in/                # 入力データが出力されるフォルダ
- |- include/
- |   |- params.h       # 設定ファイルに書いた定数が定義されるファイル
+ |- include/           # ソースコード内で include するファイルを配置
  |- out/               # 出力データが出力されるフォルダ
  |- sol/               # 解法を置くフォルダ
  |   |- correct.cpp    # 想定解
@@ -66,7 +65,7 @@ problem
  |   |- handmade.cpp
  |   :
  |- include/
- |   |- params.h    # 設定ファイルに書いた定数が書き込まれるファイル
+ |   |- params.hpp  # 設定ファイルに書いた定数が書き込まれるファイル (自動生成)
  |   |- utility.hpp # その他用いたいファイル
  |- in/
  |   |- example_00.in
@@ -99,13 +98,23 @@ problem
  |- verifier.cpp
 ```
 
+### `cp-problem-maker gen-params`
+
+```bash
+cp-problem-maker gen-params [-p /path/to/problem] [--allow-replace]
+```
+
+設定ファイルに書いた定数を `problem/include/params.hpp` に書き込む。`problem/include/params.hpp` が既に存在していればエラーとなる。ただし、明示的に `--allow-replace` を指定した場合はこの限りではない。
+
 ### `cp-problem-maker gen-case`
 
 ```bash
 cp-problem-maker gen-case [-p /path/to/problem] [--allow-replace]
 ```
 
-入出力を生成する。`problem/in/` および `problem/out/` が空でなければエラーとなる。ただし、明示的に `--allow-replace` を指定した場合はこの限りではない。
+同じ引数で `cp-problem-maker gen-params` を実行して設定ファイルの変更を反映してから入出力を生成する。`problem/in/` および `problem/out/` が空ではないか、あるいは `problem/include/params.hpp` が既に存在していればエラーとなる。ただし、明示的に `--allow-replace` を指定した場合はこの限りではない。
+
+`cp-problem-maker gen-params`
 
 ### `cp-problem-maker check`
 
