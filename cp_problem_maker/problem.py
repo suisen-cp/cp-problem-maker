@@ -17,13 +17,17 @@ class Problem:
         self.out_folder = self.problem_folder / "out"
         self.gen_folder = self.problem_folder / "gen"
         self.solutions_folder = self.problem_folder / "sol"
+        self.include_folder = self.problem_folder / "include"
         self.solution_file = self.solutions_folder / "correct.cpp"
         self.checker_file = self.problem_folder / "checker.cpp"
         self.verifier_file = self.problem_folder / "verifier.cpp"
         self.config_file = self.problem_folder / "info.toml"
         self.task_file = self.problem_folder / "task.md"
+        self.params_file = self.include_folder / "params.hpp"
 
     def create_problem(self) -> None:
+        logger.info("creating problem...")
+
         self.problem_folder.mkdir(parents=True, exist_ok=True)
 
         ensure_empty_dir(self.problem_folder)
@@ -31,6 +35,7 @@ class Problem:
         self.in_folder.mkdir(exist_ok=True)
         self.out_folder.mkdir(exist_ok=True)
         self.gen_folder.mkdir(exist_ok=True)
+        self.include_folder.mkdir(exist_ok=True)
         self.solutions_folder.mkdir(exist_ok=True)
 
         self.solution_file.touch(exist_ok=True)
@@ -38,3 +43,4 @@ class Problem:
         self.verifier_file.touch(exist_ok=True)
         self.config_file.touch(exist_ok=True)
         self.task_file.touch(exist_ok=True)
+        self.params_file.touch(exist_ok=True)

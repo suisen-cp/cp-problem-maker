@@ -4,7 +4,7 @@ from pathlib import Path
 
 import colorlog
 
-from cp_problem_maker.subcommand import init, gen_case, check, test
+from cp_problem_maker.subcommand import init, gen_case, check, test, gen_params
 
 
 def main():
@@ -35,6 +35,7 @@ def main():
     gen_case.add_parser(subparsers)
     check.add_parser(subparsers)
     test.add_parser(subparsers)
+    gen_params.add_parser(subparsers)
 
     args = parser.parse_args()
 
@@ -49,3 +50,5 @@ def main():
         check.run(path, args.solutions)
     elif subcommand == 'test':
         test.run(path, exist_ok=args.allow_replace)
+    elif subcommand == 'gen-params':
+        gen_params.run(path, exist_ok=args.allow_replace)

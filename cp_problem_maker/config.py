@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from cp_problem_maker.util import pathlib_util
 
@@ -29,6 +29,7 @@ class SolutionConfig:
 
 class Config:
     def __init__(self, config_file: Path) -> None:
+        logger.info("loading configuration file...")
         pathlib_util.ensure_file(config_file)
         config: Dict[str, Any] = toml.load(config_file)
         self.title: str = str(config.get("title", "No Title"))
@@ -48,4 +49,22 @@ class Config:
                 wrong=solution_config.get("wrong", False)
             )
         self.solution_config["correct.cpp"] = SolutionConfig(
-            name="correct.cpp", allow_tle=False, wrong=False)
+            name="correct.cpp", allow_tle=False, wrong=False
+        )
+
+        self.params: Dict[str, Any] = dict()
+        for name, value in config.get("params", dict()).items():
+            self.params[name] = value
+    
+    def write_params(self, params_file: Path, exist_ok=True) -> None:
+        logger.info("writing params...")
+        content: List[str] = [
+            "#pragma once",
+            "",
+        ]
+        for name, value in self.params.items():
+            content.append(f"const long long {name} = {value};")
+        if not exist_ok:
+            pathlib_util.ensure_not_exists(params_file)
+        params_file.touch()
+        params_file.write_text('\n'.join(content))

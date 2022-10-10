@@ -7,6 +7,7 @@ from cp_problem_maker.problem import Problem
 from cp_problem_maker.config import Config
 from cp_problem_maker.compile import compile_solution, compile_generator, compile_verifier
 from cp_problem_maker.testcase import GeneratorType, TestCase
+from cp_problem_maker.subcommand import gen_params
 
 
 logger: Logger = getLogger(__name__)
@@ -14,7 +15,8 @@ logger: Logger = getLogger(__name__)
 
 def add_parser(subparsers):
     parser_gen: argparse.ArgumentParser = subparsers.add_parser(
-        "gen-case", description="generate testcases")
+        "gen-case", description="generate testcases"
+    )
     parser_gen.add_argument(
         "-p", "--path",
         type=str,
@@ -27,6 +29,8 @@ def add_parser(subparsers):
 
 
 def run(path: Path, *, parents=False, exist_ok=False):
+    gen_params.run(path, exist_ok=exist_ok)
+
     problem = Problem(path)
     config = Config(problem.config_file)
 

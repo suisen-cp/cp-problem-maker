@@ -83,7 +83,8 @@ def judge(
 
     if solution_file.name not in config.solution_config:
         raise ValueError(
-            f'Configuration About the Solution "{solution_file.name}" Not Found.')
+            f'Configuration About the Solution "{solution_file.name}" Not Found.'
+        )
 
     solution_config = config.solution_config[solution_file.name]
     logger.info(f"  solution: {solution_file.name}")
@@ -106,6 +107,7 @@ def judge(
     elapsed_ms = (perf_counter_ns() - start_time) // (10 ** 6)
 
     if status == JudgeStatus.AC and checker_file is not None and output_file_expected is not None:
+        logger.info("running checker...")
         pathlib_util.ensure_file(checker_file)
         pathlib_util.ensure_file(output_file_expected)
         try:
