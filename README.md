@@ -2,6 +2,13 @@
 
 競技プログラミングの問題作成を補助するツール。
 
+## 動作環境
+
+- :o: Windows (WSL)
+- :x: Windows (非WSL)
+- :o: Linux
+- :question: Mac
+
 ## インストール
 
 ```bash
