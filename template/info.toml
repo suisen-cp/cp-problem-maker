@@ -1,0 +1,81 @@
+# ///////////
+# // Title //
+# ///////////
+
+title = 'Title'
+
+# //////////////////////
+# // Time limit (sec) //
+# //////////////////////
+
+timelimit = 2.0
+
+# //////////////////////////////////////////////////
+# // Register testcase generators under [[tests]] //
+# //////////////////////////////////////////////////
+
+[[tests]]
+    # Generators named "*.in" or "*.txt" are recognized as raw input files.
+    name = "00_example.in"
+    # You must place the specified number of raw input files "gen/{name}_00.in", "gen/{name}_01.in" and "gen/{name}_02.in".
+    number = 3
+
+[[tests]]
+    # Generators named "*.cpp" or "*.cc" are recognized as C++ generator files.
+    name = "01_random.cpp"
+    # Number of inputs to generate
+    number = 10
+
+# /////////////////////////////////////////////////////////////////
+# // Register solutions except "correct.cpp" under [[solutions]] //
+# /////////////////////////////////////////////////////////////////
+
+[[solutions]]
+    # Configuration of "sol/{name}"
+    name = "tle.cpp"
+    # The solution may get TLE (not required)
+    allow_tle = true
+    # The solution must not get RE for any testcases
+    allow_re = false
+    # The solution must not get WA for any testcases
+    wrong = false
+
+
+[[solutions]]
+    # Configuration of "sol/{name}"
+    name = "wa.cpp"
+    # The solution must not get TLE for any testcases
+    allow_tle = false
+    # The solution may get RE (not required)
+    allow_re = true
+    # The solution must get WA for at least one of the testcases
+    wrong = true
+
+
+# ////////////////////////////////////////
+# // Parameters written to "params.hpp" //
+# ////////////////////////////////////////
+
+# You can use the types below:
+# - int    / int array
+# - string / string array
+# - float  / float array
+# - bool   / bool array
+[params]
+    # int
+    N_MAX = 1_000_000_000_000
+    # string
+    ALPHABET = "ABC"
+    # float
+    EPS = 1e-9
+    # bool
+    FLAG = true
+    # int array
+    ARR_INT = [ 1, 2, 3, 4, 5 ]
+    # string array
+    ARR_STR = [ "ABC", "DEFG "]
+    # float array
+    ARR_FLOAT = [ 0.1, 0.2, 0.4 ]
+    # bool array
+    ARR_BOOL = [ false, true, false ]
+

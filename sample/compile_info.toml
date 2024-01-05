@@ -1,0 +1,19 @@
+# //////////////
+# // Compiler //
+# //////////////
+
+compiler = "g++"
+
+# ////////////////////
+# // Compiler Flags //
+# ////////////////////
+
+flags = [
+    "-std=c++17",
+    "-Wall",
+    "-Wextra",
+    "-fsplit-stack",
+    "-O2",
+    # You should edit the path
+    "-I/path/to/testlib"
+]

@@ -1,0 +1,81 @@
+# ///////////
+# // Title //
+# ///////////
+
+title = 'Title'
+
+# //////////////////////
+# // Time limit (sec) //
+# //////////////////////
+
+timelimit = 2.0
+
+# //////////////////////////////////////////////////
+# // Register testcase generators under [[tests]] //
+# //////////////////////////////////////////////////
+
+[[tests]]
+    # Generators named "*.in" or "*.txt" are recognized as raw input files.
+    name = "00_example.in"
+    # You must place the specified number of raw input files "gen/{name}_00.in", "gen/{name}_01.in" and "gen/{name}_02.in".
+    number = 3
+
+[[tests]]
+    # Generators named "*.in" or "*.txt" are recognized as raw input files.
+    name = "01_example.txt"
+    # You must place the specified number of raw input files "gen/{name}_00.in", "gen/{name}_01.in" and "gen/{name}_02.in".
+    number = 2
+
+[[tests]]
+    # Generators named "*.cpp" or "*.cc" are recognized as C++ generator files.
+    name = "02_random.cpp"
+    # Number of inputs to generate
+    number = 5
+
+[[tests]]
+    # Generators named "*.cpp" or "*.cc" are recognized as C++ generator files.
+    name = "03_random.cc"
+    # Number of inputs to generate
+    number = 2
+
+# /////////////////////////////////////////////////////////////////
+# // Register solutions except "correct.cpp" under [[solutions]] //
+# /////////////////////////////////////////////////////////////////
+
+[[solutions]]
+    # Configuration of "sol/re.cpp"
+    name = "re.cpp"
+    # re.cpp must not get TLE for any testcases
+    allow_tle = false
+    # re.cpp may get RE (not required)
+    allow_re = true
+    # re.cpp must not get WA for any testcases
+    wrong = false
+
+[[solutions]]
+    # Configuration of "sol/wa.cpp"
+    name = "wa.cpp"
+    # wa.cpp must not get TLE for any testcases
+    allow_tle = false
+    # wa.cpp must not get RE for any testcases
+    allow_re = false
+    # wa.cpp must get WA for at least one of the testcases
+    wrong = true
+
+[[solutions]]
+    # Configuration of "sol/tle.cpp"
+    name = "tle.cpp"
+    # tle.cpp may get TLE (not required)
+    allow_tle = true
+    # tle.cpp must not get RE for any testcases
+    allow_re = false
+    # tle.cpp must not get WA for any testcases
+    wrong = false
+
+# ////////////////////////////////////////
+# // Parameters written to "params.hpp" //
+# ////////////////////////////////////////
+
+[params]
+    N_MAX = 1_000_000_000_000
+

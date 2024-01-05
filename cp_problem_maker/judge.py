@@ -28,6 +28,11 @@ class UnexpectedWrongAnswer(Exception):
         super().__init__(*args)
 
 
+class UnexpectedAccepted(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
+
 class JudgeStatus(Enum):
     AC = 0
     WA = 1
@@ -147,3 +152,5 @@ def assert_judge_status(status: JudgeStatus, solution_config: SolutionConfig) ->
         raise UnexpectedTimeLimitExceeded()
     if status == JudgeStatus.WA and not solution_config.wrong:
         raise UnexpectedWrongAnswer()
+    if status == JudgeStatus.RE and not solution_config.allow_re:
+        raise UnexpectedRuntimeError()

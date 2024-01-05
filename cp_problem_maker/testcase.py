@@ -1,8 +1,11 @@
+from dataclasses import dataclass
 from enum import Enum
 import logging
 from pathlib import Path
+import re
 from subprocess import check_call
 from typing import List
+import textwrap
 
 from cp_problem_maker.config import Config
 from cp_problem_maker.judge import JudgeStatus, UnexpectedRuntimeError, UnexpectedTimeLimitExceeded, judge
@@ -10,23 +13,41 @@ from cp_problem_maker.util import pathlib_util
 
 logger: logging.Logger = logging.getLogger(__name__)
 
+# available suffixes for raw input files
+SUFFIX_HAND = [
+    '.in',
+    '.txt',
+]
+
+# available suffixed for C++ generator files
+SUFFIX_CPP = [
+    '.cpp',
+    '.cc',
+]
 
 class UnknownGeneratorTypeError(Exception):
     def __init__(self, generator_file: Path):
-        self.message = f'Generator files must be named as "*.cpp" or ".in", but "{generator_file}" does not match the pattern.'
+        self.message = textwrap.dedent(f"""
+            Generator file "{generator_file}" does not match any of the patterns below.
+            1. "*.cpp" or ".cc": for C++ generator files
+            2. "*.in" or ".txt": for raw input files
+        """).strip()
         super().__init__(self.message)
 
 
 class GeneratorType(Enum):
-    EXAMPLE = 0
+    # raw input files
+    RAW = 0
+    # C++ generator files
     CPP = 1
 
     @staticmethod
     def from_file(generator_file: Path) -> 'GeneratorType':
-        ext = generator_file.suffix
-        if ext == '.in':
-            return GeneratorType.EXAMPLE
-        elif ext == '.cpp':
+        # case insensitive
+        ext = generator_file.suffix.lower()
+        if ext in SUFFIX_HAND:
+            return GeneratorType.RAW
+        elif ext in SUFFIX_CPP:
             return GeneratorType.CPP
         else:
             raise UnknownGeneratorTypeError(generator_file)
@@ -45,6 +66,39 @@ class TestCase:
         self.input_file_name = f'{self.case_name_with_no}.in'
         self.output_file_name = f'{self.case_name_with_no}.out'
 
+    @staticmethod
+    def get_testcase_info(f: Path):
+        @dataclass
+        class TestCaseInfo:
+            case_name: str
+            case_no: int
+            is_input: bool
+        
+        if f.is_dir():
+            return None
+        
+        matched = re.fullmatch(r'(?P<name>.+)_(?P<num>[0-9]{2})(?P<suffix>\..+)', f.name)
+
+        if matched is None:
+            return None
+        
+        case_name = matched.group('name')
+        case_no = int(matched.group('num'))
+        suffix = matched.group('suffix')
+
+        if suffix == '.in':
+            is_input = True
+        elif suffix == '.out':
+            is_input = False
+        else:
+            return None
+
+        return TestCaseInfo(
+            case_name=case_name,
+            case_no=case_no,
+            is_input=is_input
+        )
+
     def __post_init__(self) -> None:
         self.__validate()
 
@@ -53,18 +107,20 @@ class TestCase:
 
     def _generate_input_cmd(self) -> List[str]:
         exe_file = self.generator_file.with_suffix('')
-        if self.generator_type == GeneratorType.EXAMPLE:
+        if self.generator_type == GeneratorType.RAW:
             return [
                 'cat',
-                f'{self.generator_file.with_name(self.input_file_name)}'
+                f'{self.generator_file.with_name(self.input_file_name).with_suffix(self.generator_file.suffix)}'
             ]
         elif self.generator_type == GeneratorType.CPP:
+            seed = hash(f'{exe_file}_{self.case_no}'.encode()) % (2 ** 31)
             return [
                 f'{exe_file}',
-                f'{self.case_no}'
+                f'{self.case_no}',
+                f'{seed}'
             ]
         else:
-            raise ValueError(f'{self.generator_type} is not GeneratorType.')
+            raise ValueError(f'{self.generator_type} is not an instance of GeneratorType.')
 
     def generate_input(self, input_folder: Path, *, parents=False, exist_ok=False) -> None:
         if not parents:
@@ -75,7 +131,8 @@ class TestCase:
         if not exist_ok:
             pathlib_util.ensure_not_exists(input_file)
         logger.info(f"generating input: {input_file.name}...")
-        check_call(self._generate_input_cmd(), stdout=open(input_file, mode='w'))
+        with input_file.open(mode='w') as inf:
+            check_call(self._generate_input_cmd(), stdout=inf)
 
     def _verify_cmd(self, verifier_file: Path) -> List[str]:
         verifier_exe_file = verifier_file.with_suffix('')
@@ -88,7 +145,8 @@ class TestCase:
         input_file = input_folder / self.input_file_name
         pathlib_util.ensure_file(input_file)
         logger.info(f"verifying input: {self.input_file_name}...")
-        check_call(self._verify_cmd(verifier_file), stdin=open(input_file))
+        with input_file.open() as inf:
+            check_call(self._verify_cmd(verifier_file), stdin=inf)
 
     def _generate_output_cmd(self, solution_file: Path) -> List[str]:
         return [

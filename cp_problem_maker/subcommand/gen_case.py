@@ -1,12 +1,13 @@
 import argparse
 from logging import Logger, getLogger
 from pathlib import Path
+import shutil
 from typing import Set
 
 from cp_problem_maker.problem import Problem
 from cp_problem_maker.config import Config
-from cp_problem_maker.compile import compile_solution, compile_generator, compile_verifier
-from cp_problem_maker.testcase import GeneratorType, TestCase
+from cp_problem_maker.compile import compile_solution, compile_generator, compile_verifier, CompileConfig
+from cp_problem_maker.testcase import GeneratorType, TestCase, SUFFIX_CPP, SUFFIX_HAND
 from cp_problem_maker.subcommand import gen_params
 
 
@@ -32,24 +33,71 @@ def run(path: Path, *, parents=False, exist_ok=False):
     gen_params.run(path, exist_ok=exist_ok)
 
     problem = Problem(path)
+
+    compile_config = CompileConfig(problem.compile_config_file)
     config = Config(problem.config_file)
 
-    compile_solution(problem.solution_file)
-    compile_verifier(problem.verifier_file)
+    compile_solution(problem.solution_file, compile_config=compile_config)
+    compile_verifier(problem.verifier_file, compile_config=compile_config)
 
     unused_gen_files: Set[str] = set()
-    for gen_file in problem.gen_folder.glob("*.cpp"):
-        unused_gen_files.add(gen_file.name)
-    unused_example_files: Set[str] = set()
-    for gen_file in problem.gen_folder.glob("*.in"):
-        unused_example_files.add(gen_file.stem)
+    unused_raw_input_files: Set[str] = set()
+    for gen_file in problem.gen_folder.iterdir():
+        if gen_file.is_file():
+            if gen_file.suffix in SUFFIX_CPP:
+                unused_gen_files.add(gen_file.name)
+            if gen_file.suffix in SUFFIX_HAND:
+                unused_raw_input_files.add(gen_file.stem)
+
+    if exist_ok:
+        logger.info(f"removing old inputs...")
+        for f in problem.in_folder.iterdir():
+            f_info = TestCase.get_testcase_info(f)
+            
+            is_generated_file = f_info is not None and f_info.is_input
+            if not is_generated_file:
+                f_type = "file" if f.is_file() else "folder"
+                while True:
+                    print(f'Is it ok to remove the {f_type} "{f.relative_to(problem.problem_folder)}"? [y/n]: ', end='', flush=True)
+                    response = input().strip().lower()
+                    if response in ['yes', 'y']:
+                        if f.is_file():
+                            f.unlink()
+                        else:
+                            shutil.rmtree(f)
+                        break
+                    elif response in ['no', 'n']:
+                        break
+            else:
+                f.unlink()
+
+        logger.info(f"removing old outputs...")
+        for f in problem.out_folder.iterdir():
+            f_info = TestCase.get_testcase_info(f)
+
+            is_generated_file = f_info is not None and not f_info.is_input
+            if not is_generated_file:
+                f_type = "file" if f.is_file() else "folder"
+                while True:
+                    print(f'Is it ok to remove the {f_type} "{f.relative_to(problem.problem_folder)}"? [y/n]: ', end='', flush=True)
+                    response = input().strip().lower()
+                    if response in ['yes', 'y']:
+                        if f.is_file():
+                            f.unlink()
+                        else:
+                            shutil.rmtree(f)
+                        break
+                    elif response in ['no', 'n']:
+                        break
+            else:
+                f.unlink()
 
     for testcase_config in config.testcase_config.values():
         name = testcase_config.name
         number = testcase_config.number
         generator_file = problem.gen_folder / Path(name)
         if GeneratorType.from_file(generator_file) == GeneratorType.CPP:
-            compile_generator(generator_file)
+            compile_generator(generator_file, compile_config=compile_config)
         unused_gen_files.discard(name)
         for case_no in range(number):
             testcase = TestCase(generator_file, case_no)
@@ -77,14 +125,14 @@ def run(path: Path, *, parents=False, exist_ok=False):
                     "If you want to allow file replacement, give the '--allow-replace' flag."
                 )
                 exit(1)
-            if testcase.generator_type == GeneratorType.EXAMPLE:
-                unused_example_files.discard(testcase.case_name_with_no)
+            if testcase.generator_type == GeneratorType.RAW:
+                unused_raw_input_files.discard(testcase.case_name_with_no)
 
     for unused_gen_file in unused_gen_files:
         logger.warning(
             f'The configuration for "{unused_gen_file}" is missing and was not used to generate test cases. Check if the configuration is correct.'
         )
-    for unused_example_file in unused_example_files:
+    for unused_raw_input_file in unused_raw_input_files:
         logger.warning(
-            f'"{unused_example_file}" was not used as input. Check if the configuration is correct.'
+            f'"{unused_raw_input_file}" was not used as input. Check if the configuration is correct.'
         )

@@ -1,0 +1,29 @@
+# //////////////
+# // Compiler //
+# //////////////
+
+compiler = "g++"
+
+# ////////////////////
+# // Compiler Flags //
+# ////////////////////
+
+flags = [
+    "-std=c++17",
+    "-Wall",
+    "-Wextra",
+    "-fsplit-stack",
+    "-O2",
+    # "-I/path/to/testlib"
+]
+
+# Another example of flags
+
+# flags = [
+#     "-std=c++17",
+#     "-Wall",
+#     "-Wextra",
+#     "-fsplit-stack",
+#     "-g",
+#     "-fsanitize=address,undefined",
+# ]

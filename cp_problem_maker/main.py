@@ -27,7 +27,7 @@ def main():
     )
 
     parser = argparse.ArgumentParser(
-        description="tool for competitive programming problem maker"
+        description="tool for creating competitive programming problems"
     )
     subparsers = parser.add_subparsers(dest='subcommand')
 

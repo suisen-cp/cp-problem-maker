@@ -6,9 +6,9 @@ from typing import List
 
 from cp_problem_maker.problem import Problem
 from cp_problem_maker.config import Config
-from cp_problem_maker.compile import compile_solution, compile_checker
+from cp_problem_maker.compile import compile_solution, compile_checker, CompileConfig
 from cp_problem_maker.testcase import TestCase
-from cp_problem_maker.judge import assert_judge_status,  JudgeStatus, judge
+from cp_problem_maker.judge import UnexpectedAccepted, assert_judge_status, JudgeStatus, judge
 
 
 logger: Logger = getLogger(__name__)
@@ -31,9 +31,10 @@ def add_parser(subparsers):
 
 def run(path: Path, solutions: List[str]):
     problem = Problem(path)
+    compile_config = CompileConfig(problem.compile_config_file)
     config = Config(problem.config_file)
 
-    compile_checker(problem.checker_file)
+    compile_checker(problem.checker_file, compile_config=compile_config)
 
     if not solutions:
         solutions = list(
@@ -51,9 +52,10 @@ def run(path: Path, solutions: List[str]):
 
         name = solution_config.name
         solution_file = problem.solutions_folder / name
-        compile_solution(solution_file)
+        compile_solution(solution_file, compile_config=compile_config)
 
         detect_tle = False
+        detect_re = False
         detect_wa = False
 
         for testcase_config in config.testcase_config.values():
@@ -83,13 +85,19 @@ def run(path: Path, solutions: List[str]):
                     assert_judge_status(result.status, solution_config)
 
                     detect_tle |= result.status == JudgeStatus.TLE
+                    detect_re |= result.status == JudgeStatus.RE
                     detect_wa |= result.status == JudgeStatus.WA
 
         if solution_config.allow_tle and not detect_tle:
             logger.warning(
                 f'"allow_tle" flag is set to the solution "{solution_config.name}", but there is no TLE cases.'
             )
+        if solution_config.allow_re and not detect_re:
+            logger.warning(
+                f'"allow_re" flag is set to the solution "{solution_config.name}", but there is no RE cases.'
+            )
         if solution_config.wrong and not detect_wa:
             logger.error(
                 f'"wrong" flag is set to the solution "{solution_config.name}", but there is no WA cases.'
             )
+            raise UnexpectedAccepted()
