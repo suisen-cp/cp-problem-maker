@@ -1,0 +1,54 @@
+title = "Problem Title"
+# timelimit in seconds
+timelimit = 2.0
+# memorylimit in MiB
+memorylimit = 512
+
+[[tests]]
+    # Raw input for the test
+    # Actual input files must be named "00_example_00.in", "00_example_01.in", ...
+    name = "00_example.in"
+    number = 2
+
+[[tests]]
+    # C++ code to generate the test
+    name = "01_random.cpp"
+    number = 10
+
+[[tests]]
+    # Python code to generate the test
+    name = "02_random.py"
+    number = 10
+
+[[solutions]]
+    # C++ code to solve the problem
+    name = "correct.cpp"
+    # Expected solution
+    # There must be exactly one expected solution
+    expected = true
+
+[[solutions]]
+    # Python code to solve the problem
+    name = "correct.py"
+
+[[solutions]]
+    name = "tle.cpp"
+    # Options:
+    # - "expected" means that the solution is expected to TLE for at least one test
+    # - "allow" means that the solution is allowed to TLE
+    # - "never" means that the solution is not allowed to TLE for any test
+    tle = "expected"
+    # Options for WA and RE are the same
+    wa = "never"
+    re = "never"
+
+[[solutions]]
+    name = "wrong.cpp"
+    tle = "allow"
+    wa = "expected"
+    re = "never"
+
+[params]
+    # Example of a parameter. Only integers, floats, strings are allowed.
+    N_MIN = 1
+    N_MAX = 100

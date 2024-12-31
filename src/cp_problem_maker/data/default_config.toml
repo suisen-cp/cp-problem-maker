@@ -1,0 +1,66 @@
+# This is the configuration file for cp-problem-maker.
+# It is written in TOML format.
+
+[checker]
+# The default style to use for the checker.
+# The options are currently "testlib" and "yukicoder".
+style = "testlib"
+
+[checker.exit_code]
+# Default settings are based on testlib.
+# See https://github.com/MikeMirzayanov/testlib/blob/master/testlib.h for more details.
+AC = 0
+WA = 1
+PE = 2
+FAIL = 3
+
+[language]
+# The default language to use for the problem.
+# The options are currently "C++" and "Python".
+default = "C++"
+
+[language.cpp]
+# The C++ compiler to use for compiling the C++ code.
+compiler = "g++"
+# The flags to use for compiling the C++ code.
+flags = [
+    "-std=c++20",
+    "-Wall",
+    "-Wextra",
+    "-fsplit-stack",
+    "-g",
+    "-fsanitize=address",
+    # "-I/path/to/testlib"
+]
+
+[language.cpp.solver]
+# Override flags for the solver.
+flags = [
+    "-std=c++20",
+    "-Wall",
+    "-Wextra",
+    "-fsplit-stack",
+    "-O2",
+]
+
+[language.python]
+# The python executable to use for running the python code.
+python = "python"
+
+[path]
+# Path to the problem configuration file
+problem_config = "problem.toml"
+# The directory to store the test cases in.
+inputs = "test/in/"
+# The directory to store the test case answers in.
+outputs = "test/out/"
+# The directory to store the solutions in.
+solutions = "src/sol/"
+# The directory to store the generators in.
+generators = "src/gen/"
+# Path to the checker source file (without extension)
+checker = "src/checker"
+# Path to the verifier source file (without extension)
+verifier = "src/verifier"
+# Path to the parameters file
+params = "src/params"
