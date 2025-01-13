@@ -90,11 +90,17 @@ def update_model(model: BaseModel, update_dict: dict[str, Any]) -> None:
         update_dict (dict[str, Any]): Dictionary to update the model with
     """
     for key, value in update_dict.items():
-        curr_value = getattr(model, key)
+        try:
+            curr_value = getattr(model, key)
+        except AttributeError as e:
+            raise AttributeError(
+                f"Invalid key: {key}. Options are {set(model.model_fields.keys())}."
+            ) from e
         if isinstance(curr_value, BaseModel):
             update_model(curr_value, value)
         else:
             setattr(model, key, value)
+            type(model).model_validate(model)
 
 
 class ModelAttributeAccessor:
