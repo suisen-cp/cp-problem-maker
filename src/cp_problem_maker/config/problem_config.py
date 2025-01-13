@@ -4,6 +4,7 @@ from typing import Literal, Optional
 import pydantic
 from pydantic import BaseModel, ConfigDict, Field
 
+from cp_problem_maker import anchor
 from cp_problem_maker.utils import _pydantic
 
 
@@ -69,6 +70,9 @@ class _ProblemConfig(BaseModel):
         expected_solutions = list(filter(lambda s: s.expected, self.solutions))
         assert len(expected_solutions) == 1
         return expected_solutions[0]
+
+
+EXAMPLE_PROBLEM_CONFIG_FILE = anchor.SOURCE_ROOT / "data" / "problem.toml"
 
 
 def load_problem_config(problem_config_file: Path) -> _ProblemConfig:
