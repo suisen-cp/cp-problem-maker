@@ -20,6 +20,7 @@ from cp_problem_maker.buildrun.runners.verifier import SourceTestcaseVerifier
 from cp_problem_maker.config import problem_config
 from cp_problem_maker.logging.setup import get_logger
 from cp_problem_maker.project.problem import Problem, ProblemWithConfig
+from cp_problem_maker.subcommands import gen_params
 
 _COMMAND_NAME = "gen-cases"
 
@@ -36,6 +37,9 @@ def add_parser(
     parser.add_argument(
         "--error-on-unused", action="store_true", help="Error on unused generators"
     )
+    parser.add_argument(
+        "--no-update-params", action="store_true", help="Do not update the parameters"
+    )
     return parser
 
 
@@ -43,6 +47,8 @@ def run(args: argparse.Namespace) -> None:
     path: Path | None = None
     if args.path is not None:
         path = Path(args.path)
+    if not args.no_update_params:
+        gen_params.gen_params(path)
     gen_cases(path, error_on_unused=args.error_on_unused)
 
 
