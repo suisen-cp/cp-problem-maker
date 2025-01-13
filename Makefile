@@ -20,3 +20,10 @@ check-mypy-type:
 .PHONY: tests
 tests:
 	poetry run pytest tests
+
+.PHONY: tests-cov
+tests-cov:
+	poetry run pytest --cov --cov-branch --cov-report html tests
+
+.PHONY: pre-commit
+pre-commit: check tests
