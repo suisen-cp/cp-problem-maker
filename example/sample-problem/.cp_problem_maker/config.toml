@@ -1,0 +1,8 @@
+[checker]
+style = "yukicoder" # "yukicoder" or "testlib"
+
+[language]
+default = "Python"
+
+[path]
+checker = "src/checker_yukicoder_style.cpp"

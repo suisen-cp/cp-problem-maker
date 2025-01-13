@@ -1,0 +1,40 @@
+title = "A + B"             # Problem title
+timelimit = 0.1             # [sec]
+memorylimit = 512           # [MiB]
+
+[[tests]]
+    name = "00_example.in"  # Raw input file
+    number = 2              # Number of test cases
+[[tests]]
+    name = "01_random.cpp"  # C++ generator
+    number = 10
+[[tests]]
+    name = "02_random.py"   # Python generator
+    number = 10
+
+[[solutions]]
+    name = "correct.cpp"
+    expected = true         # There must be exactly one expected solution
+[[solutions]]
+    name = "correct.py"     # Another correct solution
+[[solutions]]
+    name = "tle.cpp"        # This solution outputs the correct answer but takes too long time
+    tle = "expected"        # There should be some test cases that make this solution TLE
+    wa = "never"            # WA is not allowed
+    re = "never"            # RE is not allowed
+[[solutions]]
+    name = "wrong.cpp"      # This solution outputs the wrong answer
+    tle = "allow"           # TLE is allowed
+    wa = "expected"         # There should be some test cases that make this solution WA
+    re = "allow"            # RE is allowed
+[[solutions]]
+    name = "re.py"          # This solution throws a runtime error
+    tle = "never"
+    wa = "never"
+    re = "expected"
+
+[params]                    # Constants
+    N_MIN = 1
+    N_MAX = 20
+    X = "abcd"
+    T = 1e9
