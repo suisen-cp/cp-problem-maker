@@ -77,8 +77,8 @@ class SourceTestcaseGenerator(ITestcaseGenerator):
         hex_str = hashlib.sha256(seed_str.encode()).hexdigest()
         seed = 0
         for i in range(0, len(hex_str), 8):
-            seed ^= int(hex_str[i: i + 8], 16)
-        seed &= 0x7fff_ffff  # 31bit
+            seed ^= int(hex_str[i : i + 8], 16)
+        seed &= 0x7FFF_FFFF  # 31bit
         return seed
 
     @classmethod

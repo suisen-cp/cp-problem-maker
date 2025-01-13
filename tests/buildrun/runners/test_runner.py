@@ -39,6 +39,7 @@ int main() <%
     expected_mb = n * 8 / 1024 / 1024
     assert abs(run_result.used_memory_mb - expected_mb) <= 5
 
+
 def test_run_memory_exceeded(cpp_file: Path) -> None:
     cpp_code = """
 #include <cstdint>
@@ -51,7 +52,10 @@ int main() <% std::vector<int64_t> a(200000); %>
             runner.run(
                 [f"{exe_file}"],
                 runner_params=runner.RunnerParams(
-                    stdin=stdin, stdout=stdout, stderr=stderr, check_returncode=True,
+                    stdin=stdin,
+                    stdout=stdout,
+                    stderr=stderr,
+                    check_returncode=True,
                     memory_limit=1,
                 ),
             )

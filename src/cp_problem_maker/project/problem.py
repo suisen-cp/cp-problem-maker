@@ -162,7 +162,9 @@ class Problem:
             f.touch(exist_ok=True)
 
         if self.problem_config_file.stat().st_size == 0:
-            self.problem_config_file.write_text(problem_config.EXAMPLE_PROBLEM_CONFIG_FILE.read_text())
+            self.problem_config_file.write_text(
+                problem_config.EXAMPLE_PROBLEM_CONFIG_FILE.read_text()
+            )
 
 
 class ProblemWithConfig:
