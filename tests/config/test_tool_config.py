@@ -59,6 +59,8 @@ default = "Python"
     local_config = """
 [path]
 problem_config = "AAAAA.toml"
+[language]
+default = "C++"  # Overwrite the global config
 """
     with temp_files(2, suffix=".toml") as (temp_global_config, temp_local_config):
         temp_global_config.write(global_config)
@@ -70,6 +72,6 @@ problem_config = "AAAAA.toml"
         temp_local_config.write(local_config)
         temp_local_config.seek(0)
         config = load_local_config(Path(temp_local_config.name))
-        assert config.language.default == "Python"
+        assert config.language.default == "C++"
         assert config.checker.style == "yukicoder"
         assert config.path.problem_config == "AAAAA.toml"

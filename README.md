@@ -92,3 +92,21 @@ options:
   -p PATH, --path PATH  Path to the project
   --no-stderr           Suppress stderr of the solver and the checker
 ```
+
+### `config`
+
+```
+usage: cp-problem-maker config [-h] {global,local} key [value]
+
+Change the settings
+
+positional arguments:
+  {global,local}  Scope of the option. 'global' for global settings, 'local' for
+                  local settings
+  key             Key of the option. Keys are specified like 'language.cpp.flags'. If
+                  set to '.', show the whole config.
+  value           Value of the option. If not given, get the value of the option
+
+options:
+  -h, --help      show this help message and exit
+```
