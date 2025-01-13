@@ -1,6 +1,7 @@
 import logging
 from enum import Enum
 from logging.handlers import RotatingFileHandler
+from typing import TextIO
 
 import colorlog
 
@@ -8,14 +9,25 @@ from cp_problem_maker import anchor
 
 
 class LogLevelEnum(Enum):
-    CRITICAL = 50
+    CRITICAL = logging.CRITICAL
     FATAL = CRITICAL
-    ERROR = 40
-    WARNING = 30
+    ERROR = logging.ERROR
+    WARNING = logging.WARNING
     WARN = WARNING
-    INFO = 20
-    DEBUG = 10
-    NOTSET = 0
+    INFO = logging.INFO
+    DEBUG = logging.DEBUG
+    NOTSET = logging.NOTSET
+
+
+class NoTracebackHandler(colorlog.StreamHandler[TextIO]):
+    def handle(self, record: logging.LogRecord) -> bool:
+        info, cache = record.exc_info, record.exc_text
+        record.exc_info, record.exc_text = None, None
+        try:
+            return super().handle(record)
+        finally:
+            record.exc_info = info
+            record.exc_text = cache
 
 
 _LOG_FORMAT = "%(log_color)s[%(levelname)s]:%(name)s:%(message)s"
@@ -27,7 +39,7 @@ _LOG_COLORS = {
     "CRITICAL": "bold_red",
 }
 
-_CONSOLE_HANDLER = colorlog.StreamHandler()
+_CONSOLE_HANDLER = NoTracebackHandler()
 _CONSOLE_HANDLER.setFormatter(
     colorlog.ColoredFormatter(_LOG_FORMAT, log_colors=_LOG_COLORS)
 )

@@ -17,4 +17,3 @@ def main() -> None:
         subcommands.run(args)
     except Exception as e:
         logger.exception(e)
-        raise e
