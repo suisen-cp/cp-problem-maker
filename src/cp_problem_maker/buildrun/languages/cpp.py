@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 class Cpp(ILanguage):
     def __init__(self, cpp_config: tool_config._Cpp) -> None:
         super().__init__()
-        self.cpp_config = cpp_config
+        self.cpp_config = cpp_config.model_copy(deep=True)
         # Cache the compilation result
         self.compile_cache: dict[Path, CompileResult] = {}
 

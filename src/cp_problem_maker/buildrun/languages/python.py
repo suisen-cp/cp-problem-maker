@@ -7,7 +7,7 @@ from cp_problem_maker.config import tool_config
 class Python(ILanguage):
     def __init__(self, python_config: tool_config._Python) -> None:
         super().__init__()
-        self.python_config = python_config
+        self.python_config = python_config.model_copy(deep=True)
 
     @classmethod
     def get_name(cls) -> str:
