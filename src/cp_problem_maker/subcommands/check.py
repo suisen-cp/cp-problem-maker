@@ -1,5 +1,6 @@
 import argparse
 import os
+import subprocess
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from pydantic import BaseModel, ConfigDict
 
 from cp_problem_maker.buildrun.languages.cpp import Cpp, SolverCpp
 from cp_problem_maker.buildrun.languages.registry import LanguageRegistry
+from cp_problem_maker.buildrun.runners import runner
 from cp_problem_maker.buildrun.runners.checker import (
     CheckerParams,
     CheckerStatusEnum,
@@ -19,7 +21,13 @@ from cp_problem_maker.buildrun.runners.checker import (
     ITestcaseChecker,
     get_checker_type,
 )
-from cp_problem_maker.buildrun.runners.runner import RunnerParams, RunResult
+from cp_problem_maker.buildrun.runners.runner import (
+    InteractiveJudgeParams,
+    JudgeTimeoutExpired,
+    RunnerParams,
+    RunResult,
+    SolverTimeoutExpired,
+)
 from cp_problem_maker.buildrun.runners.solver import (
     SolveResult,
     SolverStatusEnum,
@@ -48,6 +56,12 @@ def add_parser(
         action="store_true",
         help="Suppress stderr of the solver and the checker",
     )
+    parser.add_argument(
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Use interactive judge",
+    )
     return parser
 
 
@@ -55,7 +69,13 @@ def run(args: argparse.Namespace) -> None:
     path: Path | None = None
     if args.path is not None:
         path = Path(args.path)
-    check(path, args.targets, check_all=args.all, no_stderr=args.no_stderr)
+    check(
+        path,
+        args.targets,
+        check_all=args.all,
+        no_stderr=args.no_stderr,
+        interactive=args.interactive,
+    )
 
 
 class CheckError(Exception):
@@ -99,6 +119,7 @@ class JudgeStatusEnum(Enum):
     WrongAnswer = "WA"
     RuntimeError = "RE"
     TimeLimitExceeded = "TLE"
+    JudgeTimeLimitExceeded = "J_TLE"
     PresentationError = "PE"
     Fail = "FAIL"
 
@@ -189,6 +210,7 @@ def _check(checker: ITestcaseChecker, *, params: _CheckerParams) -> CheckResult:
             runner_params=RunnerParams(
                 stdin=ouf,
                 stderr=Path(os.devnull).open("w") if params.no_stderr else sys.stderr,
+                timeout=2.0,
                 check_returncode=False,
             ),
         )
@@ -221,7 +243,15 @@ def _judge(
         case _:
             raise ValueError(f"Unsupported status {solve_result.status}")
 
-    check_status = _check(checker=checker_params.checker, params=checker_params).status
+    try:
+        check_status = _check(
+            checker=checker_params.checker, params=checker_params
+        ).status
+    except subprocess.TimeoutExpired:
+        return JudgeResult(
+            run_result=solve_result.run_result,
+            status=JudgeStatusEnum.JudgeTimeLimitExceeded,
+        )
     match check_status:
         case CheckerStatusEnum.Accepted:
             status = JudgeStatusEnum.Accepted
@@ -236,6 +266,72 @@ def _judge(
     return JudgeResult(run_result=solve_result.run_result, status=status)
 
 
+def _check_interactive(
+    *,
+    checker_params: _CheckerParams,
+    solution_params: _SolutionParams,
+) -> CheckResult:
+    checker_lang = LanguageRegistry.get_languege(checker_params.checker_file)
+    solver_lang = LanguageRegistry.get_languege(solution_params.file)
+    checker = checker_params.checker
+    checker_cmd = checker.checker_cmd(
+        checker_lang.compile(checker_params.checker_file).exec_cmd,
+        checker_params=CheckerParams(
+            input_file=checker_params.input_file,
+            output_file=checker_params.output_file,
+            answer_file=checker_params.answer_file,
+        ),
+    )
+    solver_cmd = solver_lang.compile(solution_params.file).exec_cmd
+    stderr = Path(os.devnull).open("w") if solution_params.no_stderr else sys.stderr
+    run_result = runner.run_interactive_judge(
+        judge_cmd=checker_cmd,
+        solver_cmd=solver_cmd,
+        params=InteractiveJudgeParams(
+            stderr=stderr,
+            timeout=solution_params.timeout,
+            memory_limit=solution_params.memory_limit,
+            judge_stderr=stderr,
+        ),
+    )
+    status = checker.get_status_from_exit_code(run_result.returncode)
+    return CheckResult(run_result=run_result, status=status)
+
+
+def _judge_interactive(
+    *,
+    checker_params: _CheckerParams,
+    solution_params: _SolutionParams,
+) -> JudgeResult:
+    try:
+        check_result = _check_interactive(
+            checker_params=checker_params, solution_params=solution_params
+        )
+    except SolverTimeoutExpired:
+        return JudgeResult(run_result=None, status=JudgeStatusEnum.TimeLimitExceeded)
+    except JudgeTimeoutExpired:
+        return JudgeResult(
+            run_result=None, status=JudgeStatusEnum.JudgeTimeLimitExceeded
+        )
+    except subprocess.CalledProcessError:
+        return JudgeResult(run_result=None, status=JudgeStatusEnum.RuntimeError)
+
+    check_status = check_result.status
+    match check_status:
+        case CheckerStatusEnum.Accepted:
+            status = JudgeStatusEnum.Accepted
+        case CheckerStatusEnum.WrongAnswer:
+            status = JudgeStatusEnum.WrongAnswer
+        case CheckerStatusEnum.PresentationError:
+            status = JudgeStatusEnum.PresentationError
+        case CheckerStatusEnum.Fail:
+            status = JudgeStatusEnum.Fail
+        case _:
+            raise ValueError(f"Unsupported status {check_status}")
+
+    return JudgeResult(run_result=check_result.run_result, status=status)
+
+
 def _judge_all_tests(
     tests: list[problem_config._Test],
     *,
@@ -245,7 +341,9 @@ def _judge_all_tests(
     checker: ITestcaseChecker,
     checker_file: Path,
     no_stderr: bool,
+    interactive: bool,
 ) -> JudgeSummary:
+    judge = _judge_interactive if interactive else _judge
     max_time = 0.0
     max_memory = 0.0
     status_count: defaultdict[JudgeStatusEnum, int] = defaultdict(int)
@@ -255,7 +353,7 @@ def _judge_all_tests(
             answer_file = Problem.output_file(outputs_dir, test.name, test_id)
             with NamedTemporaryFile() as tmpfile:
                 output_file = Path(tmpfile.name)
-                judge_result = _judge(
+                judge_result = judge(
                     checker_params=_CheckerParams(
                         checker=checker,
                         checker_file=checker_file,
@@ -321,7 +419,12 @@ def _summary_message(judge_summary: JudgeSummary) -> str:
 
 
 def check(
-    path: Path | None, targets: list[str], *, check_all: bool, no_stderr: bool
+    path: Path | None,
+    targets: list[str],
+    *,
+    check_all: bool,
+    no_stderr: bool,
+    interactive: bool,
 ) -> None:
     logger.debug("Passed path: %s", path)
     logger.debug("Passed targets: %s", targets)
@@ -361,6 +464,7 @@ def check(
             checker=checker,
             checker_file=problem.checker_file,
             no_stderr=no_stderr,
+            interactive=interactive,
         )
         error_messages[solution.name] = _collect_error_messages(
             solution, judge_summary.status_count

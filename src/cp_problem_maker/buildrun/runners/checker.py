@@ -50,7 +50,7 @@ class ITestcaseChecker(metaclass=abc.ABCMeta):
         """
         self.checker_config = checker_config
 
-    def _get_status_from_exit_code(self, exit_code: int) -> CheckerStatusEnum:
+    def get_status_from_exit_code(self, exit_code: int) -> CheckerStatusEnum:
         match exit_code:
             case self.checker_config.exit_code.AC:
                 return CheckerStatusEnum.Accepted
@@ -65,9 +65,7 @@ class ITestcaseChecker(metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def _checker_cmd(
-        cls, cmd: list[str], *, checker_params: CheckerParams
-    ) -> list[str]:
+    def checker_cmd(cls, cmd: list[str], *, checker_params: CheckerParams) -> list[str]:
         """Generate the command to run the checker
 
         Args:
@@ -100,9 +98,7 @@ class ITestcaseChecker(metaclass=abc.ABCMeta):
 
 class TestlibStyleChecker(ITestcaseChecker):
     @classmethod
-    def _checker_cmd(
-        cls, cmd: list[str], *, checker_params: CheckerParams
-    ) -> list[str]:
+    def checker_cmd(cls, cmd: list[str], *, checker_params: CheckerParams) -> list[str]:
         return cmd + [
             str(checker_params.input_file),
             str(checker_params.output_file),
@@ -117,18 +113,16 @@ class TestlibStyleChecker(ITestcaseChecker):
         runner_params: runner.RunnerParams,
     ) -> CheckResult:
         run_result = runner.run(
-            self._checker_cmd(cmd, checker_params=checker_params),
+            self.checker_cmd(cmd, checker_params=checker_params),
             runner_params=runner_params,
         )
-        status = self._get_status_from_exit_code(run_result.returncode)
+        status = self.get_status_from_exit_code(run_result.returncode)
         return CheckResult(run_result=run_result, status=status)
 
 
 class YukicoderStyleChecker(ITestcaseChecker):
     @classmethod
-    def _checker_cmd(
-        cls, cmd: list[str], *, checker_params: CheckerParams
-    ) -> list[str]:
+    def checker_cmd(cls, cmd: list[str], *, checker_params: CheckerParams) -> list[str]:
         return cmd + [
             str(checker_params.input_file),
             str(checker_params.answer_file),
@@ -142,10 +136,10 @@ class YukicoderStyleChecker(ITestcaseChecker):
         runner_params: runner.RunnerParams,
     ) -> CheckResult:
         run_result = runner.run(
-            self._checker_cmd(cmd, checker_params=checker_params),
+            self.checker_cmd(cmd, checker_params=checker_params),
             runner_params=runner_params,
         )
-        status = self._get_status_from_exit_code(run_result.returncode)
+        status = self.get_status_from_exit_code(run_result.returncode)
         return CheckResult(run_result=run_result, status=status)
 
 

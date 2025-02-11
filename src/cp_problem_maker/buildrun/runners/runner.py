@@ -178,3 +178,122 @@ def run(cmd: list[str], *, runner_params: RunnerParams) -> RunResult:
             stderr=run_result.stderr,
         )
     return run_result
+
+
+class InteractiveJudgeParams(BaseModel):
+    stderr: File = Field(
+        default_factory=sys.stderr.fileno, description="Error stream for the command"
+    )
+    timeout: float | None = Field(
+        None, description="Timeout for the command in seconds"
+    )
+    memory_limit: int | None = Field(
+        None, description="Memory limit for the command in MiB"
+    )
+
+    judge_stderr: File = Field(
+        default_factory=sys.stderr.fileno, description="Error stream for the command"
+    )
+    judge_timeout: float = Field(
+        1.0,
+        description="Timeout for the judge in seconds after the solver finishes running",  # noqa: E501
+    )
+
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        arbitrary_types_allowed=True,
+    )
+
+
+class JudgeTimeoutExpired(subprocess.TimeoutExpired):
+    pass
+
+
+class SolverTimeoutExpired(subprocess.TimeoutExpired):
+    pass
+
+
+def run_interactive_judge(
+    judge_cmd: list[str], solver_cmd: list[str], *, params: InteractiveJudgeParams
+) -> RunResult:
+    """Run the interactive judge
+
+    Args:
+        judge_cmd (list[str]): Command to run the judge
+        solver_cmd (list[str]): Command to run the solver
+        params (InteractiveJudgeParams): Parameter set for running the interactive judge
+    Returns:
+        RunResult:
+            Result of the interactive judge.
+            - `returncode` is the return code of the **judge**.
+            - `elapsed_time` is the time taken by the **solver**.
+            - `used_memory_mb` is the memory usage of the **solver**.
+            - `stdout` and `stderr` are empty strings.
+    Raises:
+        subprocess.TimeoutExpired:
+            If the solver or judge times out.
+            - If the solver times out, the error message is `SOLVER_TLE_MESSAGE`.
+            - If the judge times out, the error message is `JUDGE_TLE_MESSAGE`.
+        subprocess.CalledProcessError:
+            If the solver returns a non-zero exit
+    """
+    logger.debug("Running the interactive judge: %s", judge_cmd)
+    logger.debug("Running the interactive solver: %s", solver_cmd)
+    memory_usage_dict: _MemoryUsageDict = {"rss": 0}
+    with subprocess.Popen(
+        judge_cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=_dest(params.judge_stderr),
+        text=True,
+    ) as p_judge:
+        with subprocess.Popen(
+            solver_cmd,
+            stdin=p_judge.stdout,
+            stdout=p_judge.stdin,
+            stderr=_dest(params.stderr),
+            text=True,
+            preexec_fn=lambda: _limit_memory(params.memory_limit),
+        ) as p_solver:
+            memory_monitor = Thread(
+                target=monitor_memory, args=(p_solver, memory_usage_dict), daemon=True
+            )
+            memory_monitor.start()
+
+            start_time = time.perf_counter_ns()
+            try:
+                returncode_solver = p_solver.wait(timeout=params.timeout)
+            except subprocess.TimeoutExpired as e:
+                p_solver.kill()
+                p_judge.kill()
+                memory_monitor.join()
+                assert params.timeout is not None
+                raise SolverTimeoutExpired(solver_cmd, params.timeout) from e
+
+            end_time = time.perf_counter_ns()
+            memory_monitor.join()
+
+            assert p_judge.stdin is not None
+            p_judge.stdin.close()
+
+            if returncode_solver:
+                p_judge.kill()
+                raise subprocess.CalledProcessError(
+                    returncode=returncode_solver, cmd=solver_cmd
+                )
+
+            try:
+                returncode_judge = p_judge.wait(timeout=params.judge_timeout)
+            except subprocess.TimeoutExpired as e:
+                p_judge.kill()
+                raise JudgeTimeoutExpired(judge_cmd, params.judge_timeout) from e
+
+            run_result = RunResult(
+                stdout="",
+                stderr="",
+                returncode=returncode_judge,
+                elapsed_time=(end_time - start_time) / 10**9,
+                used_memory_mb=memory_usage_dict["rss"] / 1024 / 1024,
+            )
+    return run_result

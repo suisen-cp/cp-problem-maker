@@ -20,6 +20,13 @@ def add_parser(
         action="store_true",
         help="Suppress stderr of the solver and the checker",
     )
+    parser.add_argument(
+        "-i",
+        "--interactive",
+        action="store_true",
+        help="Use interactive judge",
+    )
+    parser.add_argument("-s", "--solver", help="Path to the answer generator.")
     return parser
 
 
@@ -29,5 +36,13 @@ def run(args: argparse.Namespace) -> None:
         path = Path(args.path)
     init.init(path, search_root=True)
     gen_params.gen_params(path)
-    gen_cases.gen_cases(path, error_on_unused=True)
-    check.check(path, [], check_all=True, no_stderr=args.no_stderr)
+    gen_cases.gen_cases(
+        path,
+        solver=Path(args.solver) if args.solver is not None else None,
+        error_on_unused=True,
+        interactive=args.interactive,
+        no_check=False,
+    )
+    check.check(
+        path, [], check_all=True, no_stderr=args.no_stderr, interactive=args.interactive
+    )

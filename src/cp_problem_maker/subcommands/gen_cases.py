@@ -1,4 +1,5 @@
 import argparse
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,7 +21,7 @@ from cp_problem_maker.buildrun.runners.verifier import SourceTestcaseVerifier
 from cp_problem_maker.config import problem_config
 from cp_problem_maker.logging.setup import get_logger
 from cp_problem_maker.project.problem import Problem, ProblemWithConfig
-from cp_problem_maker.subcommands import gen_params
+from cp_problem_maker.subcommands import check, gen_params
 
 _COMMAND_NAME = "gen-cases"
 
@@ -40,6 +41,16 @@ def add_parser(
     parser.add_argument(
         "--no-update-params", action="store_true", help="Do not update the parameters"
     )
+    parser.add_argument(
+        "--no-check", action="store_true", help="Do not check the answers"
+    )
+    parser.add_argument(
+        "-i",
+        "--interactive",
+        action="store_true",
+        help="Generate test cases for the interactive problem",
+    )
+    parser.add_argument("-s", "--solver", help="Path to the answer generator.")
     return parser
 
 
@@ -49,7 +60,13 @@ def run(args: argparse.Namespace) -> None:
         path = Path(args.path)
     if not args.no_update_params:
         gen_params.gen_params(path)
-    gen_cases(path, error_on_unused=args.error_on_unused)
+    gen_cases(
+        path,
+        solver=Path(args.solver) if args.solver is not None else None,
+        error_on_unused=args.error_on_unused,
+        interactive=args.interactive,
+        no_check=args.no_check,
+    )
 
 
 @dataclass
@@ -68,7 +85,7 @@ class _VerifierParams:
 
 @dataclass
 class _SolutionParams:
-    file: Path
+    file: Path | None
     answers_dir: Path
     timeout: float
     memory_limit: int | None
@@ -107,6 +124,13 @@ def _verify_testcase(testcase_file: Path, *, params: _VerifierParams) -> None:
 
 
 def _generate_answer(testcase_file: Path, *, params: _SolutionParams) -> None:
+    output_file = (params.answers_dir / testcase_file.name).with_suffix(".out")
+
+    if params.file is None:
+        logger.warning("No solver is provided. Answer file will be the same as input.")
+        shutil.copy(testcase_file, output_file)
+        return
+
     logger.info(
         "Generating answer for testcase %s by the solution %s",
         testcase_file.name,
@@ -116,7 +140,6 @@ def _generate_answer(testcase_file: Path, *, params: _SolutionParams) -> None:
     if isinstance(lang, Cpp):
         lang = LanguageRegistry.get_languege(SolverCpp)
     exec_cmd = lang.compile(params.file).exec_cmd
-    output_file = (params.answers_dir / testcase_file.name).with_suffix(".out")
     with testcase_file.open(mode="r") as inf, output_file.open(mode="w") as ouf:
         SourceTestcaseSolver.solve_testcase(
             exec_cmd,
@@ -190,9 +213,22 @@ def _generate_testcases(
     return input_files, used_generators
 
 
-def gen_cases(path: Path | None, *, error_on_unused: bool) -> None:
+def gen_cases(
+    path: Path | None,
+    *,
+    solver: Path | None = None,
+    error_on_unused: bool,
+    interactive: bool,
+    no_check: bool,
+) -> None:
     logger.debug("Passed path: %s", path)
     logger.info("Generating test cases")
+
+    if interactive and solver is None:
+        logger.warning(
+            "Solver is missing for the interactive problem. Answer files will be the same as input."  # noqa: E501
+        )
+
     problem_with_config = ProblemWithConfig(path, search_root=True)
     problem = problem_with_config.problem
     problem_cfg = problem_with_config.problem_config
@@ -202,7 +238,11 @@ def gen_cases(path: Path | None, *, error_on_unused: bool) -> None:
     verifier_file = problem.verifier_file
     verifier_params = _VerifierParams(file=verifier_file)
 
-    solution_file = problem.solutions_dir / problem_cfg.expected_solution.name
+    solution_file: Path | None = None
+    if solver is not None:
+        solution_file = solver
+    elif not interactive:
+        solution_file = problem.solutions_dir / problem_cfg.expected_solution.name
     solution_params = _SolutionParams(
         file=solution_file,
         answers_dir=problem.outputs_dir,
@@ -228,3 +268,12 @@ def gen_cases(path: Path | None, *, error_on_unused: bool) -> None:
         if error_on_unused:
             raise ValueError(f"Unused generators: {sorted(unused_generators)}")
         logger.warning("Unused generator: %s", sorted(unused_generators))
+
+    if not no_check:
+        check.check(
+            path,
+            [problem_cfg.expected_solution.name],
+            check_all=False,
+            no_stderr=False,
+            interactive=interactive,
+        )

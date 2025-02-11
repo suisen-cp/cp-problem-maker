@@ -27,7 +27,7 @@ class SolveResult(BaseModel):
 class ITestcaseSolver(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
-    def _solver_cmd(
+    def solver_cmd(
         cls,
         cmd: list[str],
     ) -> list[str]:
@@ -59,7 +59,7 @@ class ITestcaseSolver(metaclass=abc.ABCMeta):
 
 class SourceTestcaseSolver(ITestcaseSolver):
     @classmethod
-    def _solver_cmd(
+    def solver_cmd(
         cls,
         cmd: list[str],
     ) -> list[str]:
@@ -73,7 +73,7 @@ class SourceTestcaseSolver(ITestcaseSolver):
         runner_params: runner.RunnerParams,
     ) -> SolveResult:
         try:
-            run_result = runner.run(cls._solver_cmd(cmd), runner_params=runner_params)
+            run_result = runner.run(cls.solver_cmd(cmd), runner_params=runner_params)
         except subprocess.TimeoutExpired:
             return SolveResult(run_result=None, status=SolverStatusEnum.Timeout)
         except subprocess.CalledProcessError:
