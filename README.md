@@ -2,8 +2,6 @@
 
 Tools for creating competitive programming problems.
 
-**Interactive problems have not been supported yet.**
-
 ## Usage
 
 ```
