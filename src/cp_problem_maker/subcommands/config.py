@@ -24,18 +24,27 @@ def add_parser(
     )
     parser.add_argument(
         "scope",
-        help="Scope of the option. 'global' for global settings, 'local' for local settings",  # noqa: E501
+        help="Scope of the option. Use 'global' for global settings, 'local' for local settings",  # noqa: E501
         choices=["global", "local"],
     )
     parser.add_argument(
         "key",
-        help="Key of the option. Keys are specified like 'language.cpp.flags'. If set to '.', show the whole config.",  # noqa: E501
+        help="The key of the option. Use dot notation like 'language.cpp.flags'. Use '.' to display the entire configuration.",  # noqa: E501
     )
     parser.add_argument(
         "value",
-        help="Value of the option. If not given, get the value of the option",
+        help="The value of the option. If omitted, the current value will be retrieved.",  # noqa: E501
         nargs="?",
-        default=None,
+    )
+    parser.add_argument(
+        "--values",
+        help="Specify multiple values as a space-separated list for list-type options.",
+        nargs=argparse.REMAINDER,
+    )
+    parser.add_argument(
+        "--space-separated",
+        help="Get the value as a space-separated list (for list-type values).",
+        action="store_true",
     )
 
     return parser
@@ -46,18 +55,34 @@ def run(args: argparse.Namespace) -> None:
     logger.debug("Passed key: %s", args.key)
     logger.debug("Passed value: %s", args.value)
     scope: Literal["global", "local"] = args.scope
-    key = args.key.split(".") if args.key != "." else []
+    key: list[str] = args.key.split(".") if args.key != "." else []
     val = args.value
+    vals = args.values
+    space_separated = args.space_separated
+
+    if vals is not None and val is not None:
+        logger.error("Cannot specify both value and --values")
+        return
+    if vals is not None:
+        val = vals
     if val is not None:
         logger.info("Setting %s to %s", args.key, val)
     else:
         logger.info("Getting %s", args.key)
 
-    config(scope, key, val)
+    if val is not None and space_separated:
+        logger.error("--space-separated option is only available for getting values.")
+        return
+
+    config(scope, key, val, space_separated=space_separated)
 
 
 def config(
-    scope: Literal["global", "local"], key: list[str], value: Any | None
+    scope: Literal["global", "local"],
+    key: list[str],
+    value: Any | None,
+    *,
+    space_separated: bool = False,
 ) -> None:
     if scope == "global":
         user_config = load_global_config()
@@ -91,7 +116,11 @@ def config(
         if _pydantic.ModelAttributeAccessor._is_branch(attr):
             toml.dump(attr.model_dump(mode="json"), sys.stdout)
         else:
-            print(repr(attr))
+            if isinstance(attr, list) and space_separated:
+                print(" ".join(attr))
+            else:
+                logger.warning("The value is not a list-type value.")
+                print(repr(attr))
     else:
         logger.info("Writing the new config to %s", config_path)
         with config_path.open(mode="w") as f:
