@@ -119,9 +119,10 @@ def config(
             if isinstance(attr, list) and space_separated:
                 print(" ".join(attr))
             else:
-                logger.warning("The value is not a list-type value.")
+                if space_separated:
+                    logger.warning("The value is not a list-type value.")
                 print(repr(attr))
     else:
         logger.info("Writing the new config to %s", config_path)
         with config_path.open(mode="w") as f:
-            toml.dump(user_config.model_dump(mode="json", include=dump_values), f)
+            toml.dump(dump_values, f)
