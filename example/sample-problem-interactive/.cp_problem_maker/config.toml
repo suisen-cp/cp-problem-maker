@@ -1,0 +1,5 @@
+[checker]
+style = "testlib"
+
+[language.cpp]
+flags = [ "-std=c++20", "-Wall", "-Wextra", "-fsplit-stack", "-g", "-fsanitize=address", ]

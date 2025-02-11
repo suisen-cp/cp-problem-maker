@@ -3,8 +3,8 @@
 !*.*
 !*/
 # Ignore testcases
-test/in
-test/out
+**/test/in
+**/test/out
 # Ignore build files
 poetry.lock
 pyproject.toml

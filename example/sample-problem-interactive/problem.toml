@@ -1,0 +1,53 @@
+title = "Guess the number"
+# timelimit in seconds
+timelimit = 2.0
+# memorylimit in MiB
+memorylimit = 512
+
+[[tests]]
+    name = "00_example.in"
+    number = 1
+
+[[tests]]
+    name = "01_random.cpp"
+    number = 2
+
+[[tests]]
+    name = "02_hand.in"
+    number = 2
+
+[[solutions]]
+    name = "ac.py"
+    expected = true
+
+[[solutions]]
+    name = "qle_1.py"
+    wa = "expected"
+
+[[solutions]]
+    name = "qle_2.py"
+    re = "expected"
+
+[[solutions]]
+    name = "wa_1.py"
+    wa = "expected"
+
+[[solutions]]
+    name = "wa_2.py"
+    wa = "expected"
+
+[[solutions]]
+    name = "wa_1.py"
+    wa = "expected"
+
+[[solutions]]
+    name = "tle_pre.py"
+    tle = "expected"
+
+[[solutions]]
+    name = "tle_end.py"
+    tle = "expected"
+
+[params]
+    N_MIN = 0
+    N_MAX = 127
